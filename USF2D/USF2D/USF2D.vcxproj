@@ -115,6 +115,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BasisFunc.h" />
+    <ClInclude Include="Explicit.h" />
+    <ClInclude Include="InOuFiles.h" />
+    <ClInclude Include="material.h" />
+    <ClInclude Include="mesh.h" />
+    <ClInclude Include="Newton.h" />
+    <ClInclude Include="Readfile.h" />
+    <ClInclude Include="tensor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BasisFunc.cpp" />
+    <ClCompile Include="Explicit.cpp" />
+    <ClCompile Include="InOufiles.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="material.cpp" />
+    <ClCompile Include="mesh.cpp" />
+    <ClCompile Include="Newton.cpp" />
+    <ClCompile Include="notes.cpp" />
+    <ClCompile Include="Readfile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="2x2.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
