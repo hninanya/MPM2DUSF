@@ -28,6 +28,8 @@ public:
 	double particle_x_k;
 
 	int	   pid;
+	double pcoordx0;
+	double pcoordy0;
 	double pcoordx;
 	double pcoordy;
 	double pcoordz;
@@ -133,6 +135,7 @@ public:
 	void	NaturalCoordinates(int, int);
 	void	NodalMassMom(const int&, MeshMPM2D*, MeshMPM2D*, MeshMPM2D*, MeshMPM2D*, ClaElements*);
 	void	ConstitutiveModel(const int&, MeshMPM2D*, MeshMPM2D*, double , MeshMPM2D*, ClaElements*);
+	void	ConstitutiveModel2(const int&, MeshMPM2D*, MeshMPM2D*, double, MeshMPM2D*, ClaElements*);
 	void	NodesToParticles2(const int&, MeshMPM2D*, MeshMPM2D*, double, MeshMPM2D*, ClaElements*);
 	void	NodalAccVel(MeshMPM2D*, int, int, double);
 	void	GridNodalMomentumUpdate(MeshMPM2D*, double, const int&);

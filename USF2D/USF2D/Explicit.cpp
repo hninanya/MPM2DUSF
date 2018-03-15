@@ -108,7 +108,7 @@ void SolutionPhase::solution( )
 	//pch.dt = min(pch.dx,pch.dy) * timestep * mpmModel.dtfrac;
 	dt = 0.25* timestep * model.dtfrac;
 	//dt = 0.000025551942895096763;// *0 + 0.01;
-	//dt = 0.01;
+	//dt = 0.001;
 
 	//}
 
@@ -139,20 +139,10 @@ void SolutionPhase::solution( )
 
 		while (time <= totaltime)
 	{
+		//	cout <<"t = : "<< time << endl;
 		//--------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------
 		particlesInside(numElements, numParticles, elemParticles, particlePointer, elementVector);
-		//cout << endl;
-		//cout << "elemParticles[iele].inside_particles" << " " << "elemParticles[iele].dependences[counter - 1]" << endl;
-		//for (int iele = 0; iele < numElements; iele++)
-		//{
-		//	cout << elemParticles[iele].inside_particles << " " << elemParticles[iele].dependences[0] << " " << elemParticles[iele].dependences[1]
-		//		<< " " << elemParticles[iele].dependences[2] << " " << elemParticles[iele].dependences[3] << " " <<
-		//		elementVector[iele].n[0] << " " <<
-		//		elementVector[iele].n[1] << " " <<
-		//		elementVector[iele].n[2] << " " <<
-		//		elementVector[iele].n[3] << endl;
-		//}
 		//--------------------------------------------------------------------------------------------------------------------
 		NaturalCoordinates(numParticles, dimension);
 		//cout << endl;
@@ -175,66 +165,88 @@ void SolutionPhase::solution( )
 		//cout << model.damp << endl;
 		//--------------------------------------------------------------------------------------------------------------------
 		dampupdate(step, &last_ce, &last_cew, numParticles, particlePointer, dt);
+		//cout << model.damp << endl;
 		NodalExternalforces(numElements, elemParticles, meshParticles, nodePointer, particlePointer, elementVector);
+		//for (int i = 0; i < numParticles; i++)
+		//{
+		//	cout << particlePointer[i].detF<<" "<<particlePointer[i].pfgx << " " << particlePointer[i].pfgy << endl;;
+		//}
+		//
 		ConstitutiveModel(numElements, particlePointer, nodePointer, dt, elemParticles, elementVector);
-		NodalMassMom(numElements, elemParticles, meshParticles, nodePointer, particlePointer, elementVector);
-		//cout << endl;
-		//cout << "particlePointer[i].pvelx" << " " << "particlePointer[i].pvely" << endl;
-		//for (int i = 0; i < numParticles; i++)
-		//{
-		//	cout << particlePointer[i].pVSxx << " " << particlePointer[i].pVSyy << endl;
-		//}
-		//cout << endl;
-		//cout << "particlePointer[i].pvelx" << " " << "particlePointer[i].pvely" << endl;
-		//for (int i = 0; i < numParticles; i++)
-		//{
-		//	cout << particlePointer[i].detF <<" " << particlePointer[i].detF << endl;
-		//}
 		
-		NodalInternalforces(numElements, elemParticles, meshParticles, nodePointer, particlePointer, elementVector);
+
+		//for (int i = 0; i < numParticles; i++)
+		//{
+		//	cout << particlePointer[i].de11/dt << " " << particlePointer[i].de12 / dt <<
+		//		" " << particlePointer[i].de21 / dt << " " << particlePointer[i].de22 / dt << " " << endl;
+		//}
+
+	/*	for (int i = 0; i < numParticles; i++)
+		{
+			cout << particlePointer[i].pIGD11 << " " << particlePointer[i].pIGD12 <<
+				" " << particlePointer[i].pIGD21 << " " << particlePointer[i].pIGD22 << " " << endl;
+		}
+*/
+		//cout << "particlePointer[i].psigxx" << " " << "particlePointer[i].psigxy" << " " << "particlePointer[i].psigyx" << " "
+		//	<< "particlePointer[i].psigyy" <<" "<<"detF" <<endl;
+		//for (int i = 0; i < numParticles; i++)
+		//{
+		//	cout << particlePointer[i].pVSxx << setw(15) << particlePointer[i].pVSxy << setw(15) << particlePointer[i].pVSyx << setw(15)
+		//		<< particlePointer[i].pVSyy <<" "<<particlePointer[i].pvol<<" "<<particlePointer[i].detF<< endl;
+		//}
 		//cout << endl;
-		//cout << "nodePointer[i].naccx" << " " << "nodePointer[i].naccy" << endl;
+		//cout << "nodepointer[i].neforcex" << " " << "nodepointer[i].neforcey" << endl;
 		//for (int i = 0; i < numNodes; i++)
 		//{
-		//	cout << nodePointer[i].niforcex << " " << nodePointer[i].niforcex << endl;
+		//	cout << nodePointer[i].neforcex << " " << nodePointer[i].neforcey << endl;
 		//}
-		
-		NodalAccVel(nodePointer, numNodes, step, dt);
-		BCVelocitySolid(vectorBCvelocity, numBCvel, nodePointer);
-
-
-		GridNodalMomentumUpdate(nodePointer, dt, numNodes);
-
-
-		NodesToParticles2(numElements, particlePointer, nodePointer, dt, elemParticles, elementVector);
-
-	
-
+		NodalMassMom(numElements, elemParticles, meshParticles, nodePointer, particlePointer, elementVector);
+		//for (int i = 0; i < numParticles; i++)
+		//{
+		//	cout << particlePointer[i].pmox << " " << particlePointer[i].pmoy << endl;
+		//}
+		//cout << endl;
+		//cout << "nodePointer[i].nmass"<< endl;
+		//for (int i = 0; i < numNodes; i++)
+		//{
+		//	cout << nodePointer[i].nmass << endl;
+		//}
 
 		//cout << endl;
 		//cout << "nodePointer[i].nmass"<< " " << "nodePointer[i].nmomentumx" << " " << "nodePointer[i].nmomentumy" << endl;
 		//for (int i = 0; i < numNodes; i++)
 		//{
-		//	cout<< nodePointer[i].nmass << " " << nodePointer[i].nmomentumx << " " << nodePointer[i].nmomentumy << endl;
+		//	cout<< nodePointer[i].nmomentumx << " " << nodePointer[i].nmomentumy << endl;
 		//}
-		//--------------------------------------------------------------------------------------------------------------------
-	
-
-	
-		//--------------------------------------------------------------------------------------------------------------------
+		//cout << "particlePointer[i].psigxx" << " " << "particlePointer[i].psigxy" << " " << "particlePointer[i].psigyx" << " "
+		//	<< "particlePointer[i].psigyy" << endl;
+		//for (int i = 0; i < numParticles; i++)
+		//{
+		//	cout << particlePointer[i].pVSxx << setw(15) << particlePointer[i].pVSxy << setw(15) << particlePointer[i].pVSyx << setw(15)
+		//		<< particlePointer[i].pVSyy << endl;
+		//}
+		NodalInternalforces(numElements, elemParticles, meshParticles, nodePointer, particlePointer, elementVector);
 		//cout << endl;
-		//cout << "nodePointer[i].nmass" << " " << "nodePointer[i].nmomentumx" << " " << "nodePointer[i].nmomentumy" << endl;
+		//cout << "nodepointer[i].niforcex" << " " << "nodepointer[i].niforcey" << endl;
 		//for (int i = 0; i < numNodes; i++)
 		//{
-		//	cout <<nodePointer[i].nmomentumx << " " << nodePointer[i].nmomentumy << " " << nodePointer[i].ntforcex << " " << nodePointer[i].ntforcey << endl;
+		//	cout << nodePointer[i].niforcex << " " << nodePointer[i].niforcey << endl;
 		//}
+
+
+		
 	
-		//--------------------------------------------------------------------------------------------------------------------
+		
+		NodalAccVel(nodePointer, numNodes, step, dt);
+		BCVelocitySolid(vectorBCvelocity, numBCvel, nodePointer);
 
-
-
-
-		////--------------------------------------------------------------------------------------------------------------------
+		//cout << endl;
+		//cout << "nodePointer[i].naccx" << " " << "nodePointer[i].naccy" << endl;
+		//for (int i = 0; i < numNodes; i++)
+		//{
+		//	cout << nodePointer[i].naccx << " " << nodePointer[i].naccy << endl;
+		//}
+		GridNodalMomentumUpdate(nodePointer, dt, numNodes);
 		//cout << endl;
 		//cout << "nodePointer[i].nvelx" << " " << "nodePointer[i].nvely" << endl;
 		//for (int i = 0; i < numNodes; i++)
@@ -242,28 +254,42 @@ void SolutionPhase::solution( )
 		//	cout << nodePointer[i].nvelx << " " << nodePointer[i].nvely << endl;
 		//}
 
-		//--------------------------------------------------------------------------------------------------------------------
+		NodesToParticles2(numElements, particlePointer, nodePointer, dt, elemParticles, elementVector);
+
+		//for (int i = 0; i < numParticles; i++)
+		//{
+		//	cout<<particlePointer[i].pvelx<<" "<<particlePointer[i].pvely<<endl;
+		//}
 		//cout << endl;
-		//cout << "nodePointer[i].nmass" << " " << "nodePointer[i].nvelx" << " " << "nodePointer[i].nvely" << endl;
+		//cout << "nodePointer[i].nvelx" << " " << "nodePointer[i].nvely" << endl;
 		//for (int i = 0; i < numNodes; i++)
 		//{
-		//	cout << nodePointer[i].nmass << " " << nodePointer[i].nvelx << " " << nodePointer[i].nvely << endl;
+		//	cout << nodePointer[i].nvelx << " " << nodePointer[i].nvely << endl;
+		//}
+		ConstitutiveModel2(numElements, particlePointer, nodePointer, dt, elemParticles, elementVector);
+		
+		//for (int i = 0; i < numParticles; i++)
+		//{
+		//	cout << particlePointer[i].detF << endl;
+		//}
+		//for (int i = 0; i < numParticles; i++)
+		//{
+		//	cout << particlePointer[i].pVG11 << " " << particlePointer[i].pVG12 <<
+		//		" " << particlePointer[i].pVG21 << " " << particlePointer[i].pVG22 << " " << endl;
 		//}
 
 		//--------------------------------------------------------------------------------------------------------------------
 		//cout << endl;
+		//cout << "nodePointer[i].naccx" << " " << "nodePointer[i].naccy" << endl;
+		//for (int i = 0; i < numNodes; i++)
+		//{
+		//	cout << nodePointer[i].naccx << " " << nodePointer[i].naccy << endl;
+		//}
 		//for (int i = 0; i < numParticles; i++)
 		//{
-		//	cout << particlePointer[i].pcoordx << " " << particlePointer[i].pcoordy << endl;
+		//	cout << particlePointer[i].pvelx << " " << particlePointer[i].pvely << endl;
 		//}
 
-		//cout << "particlePointer[i].pe11" << " " << "particlePointer[i].pe12" << " " << "particlePointer[i].pe21" << " "
-		//	<< "particlePointer[i].pe22" << endl;
-		//for (int i = 0; i < numParticles; i++)
-		//{
-		//	cout << particlePointer[i].psigxx << " " << particlePointer[i].psigxy << " " << particlePointer[i].psigyx << " " 
-		//		<< particlePointer[i].psigyy << endl;
-		//}
 
 		//export_1.PrintHistory(numParticles, write, step,time);
 		step++;

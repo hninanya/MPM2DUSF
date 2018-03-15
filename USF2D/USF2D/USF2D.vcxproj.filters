@@ -74,4 +74,12 @@
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="a.vtk">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="rerer.vtk">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

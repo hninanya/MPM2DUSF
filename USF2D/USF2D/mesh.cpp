@@ -133,6 +133,9 @@ double MeshMPM2D::CreatModelMPM(const int& numNodes, const int& numElements, con
 		//Volume
 		particlePointer[i].pvol = particlePointer[i].pmass / particlePointer[i].pden;
 		particlePointer[i].pvol0 = particlePointer[i].pvol;
+		particlePointer[i].pcoordx0 = pcoordx;
+		particlePointer[i].pcoordy0 = pcoordy;
+
 		//Initial Stress
 		particlePointer[i].psigxx = model.iniSxx;
 		particlePointer[i].psigxy = model.iniSxy;
@@ -156,6 +159,8 @@ double MeshMPM2D::CreatModelMPM(const int& numNodes, const int& numElements, con
 		particlePointer[i].pGD12 = 0;
 		particlePointer[i].pGD21 = 0;
 		particlePointer[i].pGD22 = 1;
+
+		particlePointer[i].detF = 1;
 
 		//----------------------------------------------------------------------------------------------------------------
 		//Particle material
@@ -286,7 +291,6 @@ void BoundaryConditions::BCVelocitySolid(ClaBoundaryC*BCvel, int numBCvel, MeshM
 
 	//	Node[BCvel[i].idBC - 1].naccx = 0;
 	//	Node[BCvel[i].idBC - 1].naccy = 0;
-
 	//}
 }
 
@@ -338,7 +342,7 @@ void MeshMPM2D::NaturalCoordinates(int numParticles, int dimension)
 }
 void MeshMPM2D::NodalMassMom(const int & numElements, MeshMPM2D*elePart, MeshMPM2D*meshPart, MeshMPM2D*Node, MeshMPM2D*Part, ClaElements*EleVector)
 {
-	for (int i = 0; i < numParticles; i++)
+	for (int i = 0; i < numNodes; i++)
 	{
 		Node[i].nmomentumx = 0;
 		Node[i].nmomentumy = 0;
@@ -352,6 +356,8 @@ void MeshMPM2D::NodalMassMom(const int & numElements, MeshMPM2D*elePart, MeshMPM
 		Part[i].pmox = Part[i].pvelx*Part[i].pmass*Part[i].detF;
 		Part[i].pmoy = Part[i].pvely*Part[i].pmass*Part[i].detF;
 	}
+
+
 
 	for (int iele = 0; iele < numElements; iele++)
 	{
@@ -379,6 +385,19 @@ void MeshMPM2D::NodalMassMom(const int & numElements, MeshMPM2D*elePart, MeshMPM
 		}
 	}
 
+
+	//for (int i = 0; i < numNodes; i++)
+	//{
+	//	cout << nodePointer[i].nmass << endl;
+	//}
+
+
+
+	//for (int i = 0; i < numNodes; i++)
+	//{
+	//	cout << nodePointer[i].nmomentumx << " " << nodePointer[i].nmomentumy << endl;
+	//}
+
 	for (int i = 0; i < numNodes; i++)
 	{
 		nodePointer[i].nvelx = nodePointer[i].nmomentumx / nodePointer[i].nmass;
@@ -395,11 +414,19 @@ void MeshMPM2D::NodalExternalforces(const int & numElements, MeshMPM2D*elePart, 
 		Node[i].neforcey = 0;
 	}
 
+	//for (int i = 0; i < numParticles; i++)
+	//{
+	//	Part[i].pfgx = model.gravx*Part[i].pmass;
+	//	Part[i].pfgy = model.gravy*Part[i].pmass;
+	//}
+
 	for (int i = 0; i < numParticles; i++)
 	{
-		Part[i].pfgx = model.gravx*Part[i].pmass;
-		Part[i].pfgy = model.gravy*Part[i].pmass;
+		Part[i].pfgx = model.gravx*Part[i].pvol*Part[i].detF*Part[i].pden;
+		Part[i].pfgy = model.gravy*Part[i].pvol*Part[i].detF*Part[i].pden;
 	}
+
+
 
 
 	for (int iele = 0; iele < numElements; iele++)
@@ -417,8 +444,8 @@ void MeshMPM2D::NodalExternalforces(const int & numElements, MeshMPM2D*elePart, 
 			{
 				int idnode = EleVector[iele].n[i] - 1;
 
-				Node[idnode ].neforcex += GShape[i].Sh*Part[idpart].pfgx;
-				Node[idnode ].neforcey += GShape[i].Sh*Part[idpart].pfgy;
+				Node[idnode].neforcex += GShape[i].Sh*Part[idpart].pfgx;
+				Node[idnode].neforcey += GShape[i].Sh*Part[idpart].pfgy;
 						
 			}
 		}
@@ -451,9 +478,9 @@ void MeshMPM2D::NodalInternalforces(const int & numElements, MeshMPM2D*elePart, 
 				int idnode = EleVector[iele].n[i] - 1;
 
 				//Nodal internal force
-				Node[idnode].niforcex -= (	Part[idpart].pVSxx*GShape[i].GSh_x +Part[idpart].pVSxy*GShape[i].GSh_y);
+				Node[idnode].niforcex -= Part[idpart].pVSxx*GShape[i].GSh_x + Part[idpart].pVSxy*GShape[i].GSh_y;
 
-				Node[idnode].niforcey -=(					Part[idpart].pVSyx*GShape[i].GSh_x +		Part[idpart].pVSyy*GShape[i].GSh_y);
+				Node[idnode].niforcey -= Part[idpart].pVSyx*GShape[i].GSh_x + Part[idpart].pVSyy*GShape[i].GSh_y;
 
 
 			}
@@ -470,10 +497,71 @@ void MeshMPM2D::NodalInternalforces(const int & numElements, MeshMPM2D*elePart, 
 void MeshMPM2D::ConstitutiveModel
 (const int&numElements, MeshMPM2D*Part, MeshMPM2D*Node, double dtime, MeshMPM2D*elePart, ClaElements*EleVector)
 {
-	//for (int i = 0; i < numNodes; i++)
-	//{
-	//	cout << Node[i].nvelx << " " << Node[i].nvely << endl;
-	//}
+	for (int iele = 0; iele < numElements; iele++)
+	{
+		int mpts = elePart[iele].inside_particles;
+		for (int ipar = 0; ipar < mpts; ipar++)
+		{
+			int idpart = elePart[iele].dependences[ipar];
+			Phi_4(meshParticles[idpart - 1].part_coord_xi, meshParticles[idpart - 1].part_coord_eta);
+			GradPhi_4(meshParticles[idpart - 1].part_coord_xi, meshParticles[idpart - 1].part_coord_eta);
+			GradPhi_4xy(iele);
+
+			Part[idpart - 1].pVG11 = 0;
+			Part[idpart - 1].pVG12 = 0;
+			Part[idpart - 1].pVG21 = 0;
+			Part[idpart - 1].pVG22 = 0;
+
+			for (int i = 0; i < 4; i++)												// 4 define the nodes of each element
+			{
+				int idnode = EleVector[iele].n[i];
+
+				//Particle velocity gradient
+				//Part[idpart - 1].pVG11 += GShape[i].GSh_x*Node[idnode - 1].nvelx;
+				//Part[idpart - 1].pVG12 += GShape[i].GSh_x*Node[idnode - 1].nvely;
+				//Part[idpart - 1].pVG21 += GShape[i].GSh_y*Node[idnode - 1].nvelx;
+				//Part[idpart - 1].pVG22 += GShape[i].GSh_y*Node[idnode - 1].nvely;
+
+				Part[idpart - 1].pVG11 += GShape[i].GSh_x*Node[idnode - 1].nvelx;
+				Part[idpart - 1].pVG12 += GShape[i].GSh_y*Node[idnode - 1].nvelx;
+				Part[idpart - 1].pVG21 += GShape[i].GSh_x*Node[idnode - 1].nvely;
+				Part[idpart - 1].pVG22 += GShape[i].GSh_y*Node[idnode - 1].nvely;
+			}
+
+			///Gradiente deformation F=(I+L.dt)F
+			Part[idpart - 1].pIGD11 = (1 + Part[idpart - 1].pVG11*dtime);
+			Part[idpart - 1].pIGD12 = (Part[idpart - 1].pVG12*dtime);
+			Part[idpart - 1].pIGD21 = (Part[idpart - 1].pVG21*dtime);
+			Part[idpart - 1].pIGD22 = (1 + Part[idpart - 1].pVG22*dtime);
+
+
+			///Gradiente deformation F=(I+L.dt)F
+			Part[idpart - 1].pGD11 = (1 + Part[idpart - 1].pVG11*dtime)*Part[idpart - 1].pGD11 + Part[idpart - 1].pVG12*dtime*Part[idpart - 1].pGD21;
+			Part[idpart - 1].pGD12 = (1 + Part[idpart - 1].pVG11*dtime)*Part[idpart - 1].pGD12 + Part[idpart - 1].pVG12*dtime*Part[idpart - 1].pGD22;
+			Part[idpart - 1].pGD21 = Part[idpart - 1].pVG21*dtime*Part[idpart - 1].pGD11 + (1 + Part[idpart - 1].pVG22*dtime)*Part[idpart - 1].pGD21;
+			Part[idpart - 1].pGD22 = Part[idpart - 1].pVG21*dtime*Part[idpart - 1].pGD12 + (1 + Part[idpart - 1].pVG22*dtime)*Part[idpart - 1].pGD22;
+
+			///Updating volume
+			Part[idpart - 1].detF = (Part[idpart - 1].pGD11*Part[idpart - 1].pGD22 - Part[idpart - 1].pGD21*Part[idpart - 1].pGD12);
+			Part[idpart - 1].pvol = Part[idpart - 1].detF*Part[idpart - 1].pvol0;
+		}
+	}
+
+	for (int i = 0; i < numParticles; i++)
+	{
+		planeStrainLinear(particlePointer[i]);
+		Part[i].pVSxx = Part[i].psigxx*Part[i].pvol;
+		Part[i].pVSxy = Part[i].psigxy*Part[i].pvol;
+		Part[i].pVSyx = Part[i].psigyx*Part[i].pvol;
+		Part[i].pVSyy = Part[i].psigyy*Part[i].pvol;
+
+	}
+
+}
+
+void MeshMPM2D::ConstitutiveModel2
+(const int&numElements, MeshMPM2D*Part, MeshMPM2D*Node, double dtime, MeshMPM2D*elePart, ClaElements*EleVector)
+{
 
 	for (int iele = 0; iele < numElements; iele++)
 	{
@@ -489,21 +577,21 @@ void MeshMPM2D::ConstitutiveModel
 			Part[idpart - 1].pVG12 = 0;
 			Part[idpart - 1].pVG21 = 0;
 			Part[idpart - 1].pVG22 = 0;
-			
+
 			for (int i = 0; i < 4; i++)												// 4 define the nodes of each element
 			{
 				int idnode = EleVector[iele].n[i];
 
 				//Particle velocity gradient
-				Part[idpart - 1].pVG11 += GShape[i].GSh_x*Node[idnode - 1].nvelx;
-				Part[idpart - 1].pVG12 += GShape[i].GSh_x*Node[idnode - 1].nvely;
-				Part[idpart - 1].pVG21 += GShape[i].GSh_y*Node[idnode - 1].nvelx;
-				Part[idpart - 1].pVG22 += GShape[i].GSh_y*Node[idnode - 1].nvely;
-
 				//Part[idpart - 1].pVG11 += GShape[i].GSh_x*Node[idnode - 1].nvelx;
-				//Part[idpart - 1].pVG12 += GShape[i].GSh_y*Node[idnode - 1].nvelx;
-				//Part[idpart - 1].pVG21 += GShape[i].GSh_x*Node[idnode - 1].nvely;
+				//Part[idpart - 1].pVG12 += GShape[i].GSh_x*Node[idnode - 1].nvely;
+				//Part[idpart - 1].pVG21 += GShape[i].GSh_y*Node[idnode - 1].nvelx;
 				//Part[idpart - 1].pVG22 += GShape[i].GSh_y*Node[idnode - 1].nvely;
+
+				Part[idpart - 1].pVG11 += GShape[i].GSh_x*Node[idnode - 1].nvelx;
+				Part[idpart - 1].pVG12 += GShape[i].GSh_y*Node[idnode - 1].nvelx;
+				Part[idpart - 1].pVG21 += GShape[i].GSh_x*Node[idnode - 1].nvely;
+				Part[idpart - 1].pVG22 += GShape[i].GSh_y*Node[idnode - 1].nvely;
 			}
 
 			///Gradiente deformation F=(I+L.dt)F
@@ -528,9 +616,8 @@ void MeshMPM2D::ConstitutiveModel
 			Part[idpart - 1].de12 = 0.5*(Part[idpart - 1].pVG12 + Part[idpart - 1].pVG21)*dtime;
 			Part[idpart - 1].de21 = 0.5*(Part[idpart - 1].pVG21 + Part[idpart - 1].pVG12)*dtime;
 			Part[idpart - 1].de22 = 0.5*(Part[idpart - 1].pVG22 + Part[idpart - 1].pVG22)*dtime;
-			
+
 			///Constitutive model
-			planeStrainLinear(particlePointer[idpart - 1]);
 
 			//Strain at particles
 			Part[idpart - 1].e11 += Part[idpart - 1].de11;
@@ -540,15 +627,15 @@ void MeshMPM2D::ConstitutiveModel
 		}
 	}
 
-	for (int i = 0; i < numParticles; i++)
-	{
-		Part[i].pVSxx = Part[i].psigxx*Part[i].pvol;
-		Part[i].pVSxy = Part[i].psigxy*Part[i].pvol;
-		Part[i].pVSyx = Part[i].psigyx*Part[i].pvol;
-		Part[i].pVSyy = Part[i].psigyy*Part[i].pvol;
+//	for (int i = 0; i < numParticles; i++)
+//	{
+		//Part[i].pVSxx = Part[i].psigxx*Part[i].pvol;
+		//Part[i].pVSxy = Part[i].psigxy*Part[i].pvol;
+		//Part[i].pVSyx = Part[i].psigyx*Part[i].pvol;
+		//Part[i].pVSyy = Part[i].psigyy*Part[i].pvol;
 
-	}
-
+//	}
+//
 }
 
 void MeshMPM2D::NodesToParticles2(const int&numElements, MeshMPM2D*Part, MeshMPM2D*Node, double dtime, MeshMPM2D*elePart, ClaElements*EleVector)
@@ -579,15 +666,20 @@ void MeshMPM2D::NodesToParticles2(const int&numElements, MeshMPM2D*Part, MeshMPM
 			}
 		}
 	}
+
+
+
 }
 
 void MeshMPM2D::NodalAccVel(MeshMPM2D* Node, int numNodes, int step, double dt)
 {
 	for (int i = 0; i < numNodes; i++)
 	{
-		Node[i].naccx = (Node[i].ntforcex - model.damp*Node[i].nmomentumx) / Node[i].nmass;
-		Node[i].naccy = (Node[i].ntforcey-model.damp*Node[i].nmomentumy) / Node[i].nmass;
+		Node[i].naccx = 0;// (Node[i].ntforcex - model.damp*Node[i].nmomentumx) / Node[i].nmass;
+		Node[i].naccy = (Node[i].ntforcey - model.damp*Node[i].nmomentumy) / Node[i].nmass;
 	}
+
+	
 
 	if (step == 0) 
 	{
